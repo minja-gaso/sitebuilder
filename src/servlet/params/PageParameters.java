@@ -18,6 +18,10 @@ public class PageParameters
 		{
 			page.setTitle(parameterMap.get("PAGE_TITLE")[0]);
 		}
+		if(parameterMap.get("PAGE_SUBTITLE") != null)
+		{
+			page.setSubtitle(parameterMap.get("PAGE_SUBTITLE")[0]);
+		}
 		if(parameterMap.get("PAGE_HTML") != null)
 		{
 			page.setHtml(parameterMap.get("PAGE_HTML")[0]);

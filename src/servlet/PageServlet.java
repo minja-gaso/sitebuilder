@@ -35,19 +35,18 @@ public class PageServlet extends HttpServlet {
 		
 		WebsiteDAO websiteDAO = DAOFactory.getWebsiteDAO();
 		Page page = websiteDAO.getWebsitePage(pageID);
-		
-		String html = page.getHtml();		
-		
+
 		long fkTemplateId = page.getFkTemplateId();
 		Template template = websiteDAO.getWebsiteTemplate(fkTemplateId);
-		String templateHtml = template.getHtml();
 		
 		long fkSiteId = template.getFkSiteId();
 		Website site = websiteDAO.getWebsite(fkSiteId);
-		String siteCss = site.getCss();
 
-		templateHtml = templateHtml.replace("{CONTENT}", html);
-		templateHtml = templateHtml.replace("{CSS}", "<style type='text/css'>" + siteCss + "</style>");
+		String templateHtml = template.getHtml();
+		templateHtml = templateHtml.replace("{CONTENT}", page.getHtml());
+		templateHtml = templateHtml.replace("{TITLE}", page.getTitle());
+		templateHtml = templateHtml.replace("{SUBTITLE}", page.getSubtitle());
+		templateHtml = templateHtml.replace("{CSS}", "<style type='text/css'>" + site.getCss() + "</style>");
 		
 		response.setContentType("text/html");
 		response.setCharacterEncoding("utf-8");

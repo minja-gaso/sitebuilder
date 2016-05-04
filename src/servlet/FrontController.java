@@ -91,14 +91,13 @@ public class FrontController extends HttpServlet
 		Data data = new Data();
 		Website website = websiteDAO.getWebsite(websiteID);
 		java.util.List<Website> websites = null;
-		if(website == null)
-		{
-			websites = websiteDAO.getWebsites();
-		}
+		
 		Template template = websiteDAO.getWebsiteTemplate(templateID);
-		java.util.List<Template> templates = websiteDAO.getWebsiteTemplates();
+		java.util.List<Template> templates = null;
 		Page page = websiteDAO.getWebsitePage(pageID);
-		java.util.List<Page> pages = websiteDAO.getWebsitePages();
+		java.util.List<Page> pages = null;
+		
+		boolean isNewWebsite = false;
 		
 		if(parameterMap.get("ACTION") != null)
 		{
@@ -107,6 +106,13 @@ public class FrontController extends HttpServlet
 			{
 				websiteID = websiteDAO.createWebsite();
 				website = websiteDAO.getWebsite(websiteID);
+				isNewWebsite = true;
+			}
+			if(paramAction.equals("DELETE_WEBSITE"))
+			{
+				websiteDAO.deleteWebsite(websiteID);
+				websiteID = 0;
+				website = null;
 			}
 			else if(paramAction.equals("SAVE_WEBSITE"))
 			{
@@ -123,6 +129,10 @@ public class FrontController extends HttpServlet
 				templateID = websiteDAO.createWebsiteTemplate();
 				template = websiteDAO.getWebsiteTemplate(templateID);
 			}
+			else if(paramAction.equals("DELETE_TEMPLATE"))
+			{
+				websiteDAO.deleteWebsiteTemplate(templateID);
+			}
 			else if(paramAction.equals("SAVE_PAGE"))
 			{
 				page = PageParameters.process(request, page);
@@ -133,15 +143,26 @@ public class FrontController extends HttpServlet
 				pageID = websiteDAO.createWebsitePage();
 				page = websiteDAO.getWebsitePage(pageID);
 			}
+			else if(paramAction.equals("DELETE_PAGE"))
+			{
+				websiteDAO.deleteWebsitePage(pageID);
+			}
 		}
 		
+		if(websiteID == 0)
+		{
+			websites = websiteDAO.getWebsites();
+		}
+		
+		templates = websiteDAO.getWebsiteTemplates();
+		pages = websiteDAO.getWebsitePages();		
 		
 		String xslScreen = null;
 		if((parameterMap.get("SCREEN") != null))
 		{
 			String paramScreen = parameterMap.get("SCREEN")[0];
 			
-			if(paramScreen.equals("GENERAL"))
+			if(paramScreen.equals("GENERAL") || isNewWebsite)
 			{
 				xslScreen = "general.xsl";
 			}
@@ -166,6 +187,11 @@ public class FrontController extends HttpServlet
 				if(pages != null)
 				{
 					website.getPage().addAll(pages);
+				}
+				
+				if(templates != null)
+				{
+					website.getTemplate().addAll(templates);
 				}
 			}
 			else if(paramScreen.equals("PAGE"))
