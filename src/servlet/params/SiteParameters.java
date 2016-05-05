@@ -20,6 +20,10 @@ public class SiteParameters
 		{
 			website.setVanityUrl(parameterMap.get("WEBSITE_URL")[0]);
 		}
+		if(parameterMap.get("WEBSITE_FOOTER") != null)
+		{
+			website.setFooter(parameterMap.get("WEBSITE_FOOTER")[0]);
+		}
 		if(parameterMap.get("WEBSITE_CSS") != null)
 		{
 			website.setCss(parameterMap.get("WEBSITE_CSS")[0]);

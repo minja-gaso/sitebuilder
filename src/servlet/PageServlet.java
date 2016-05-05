@@ -46,6 +46,7 @@ public class PageServlet extends HttpServlet {
 		templateHtml = templateHtml.replace("{CONTENT}", page.getHtml());
 		templateHtml = templateHtml.replace("{TITLE}", page.getTitle());
 		templateHtml = templateHtml.replace("{SUBTITLE}", page.getSubtitle());
+		templateHtml = templateHtml.replace("{FOOTER}", site.getFooter());
 		templateHtml = templateHtml.replace("{CSS}", "<style type='text/css'>" + site.getCss() + "</style>");
 		
 		response.setContentType("text/html");

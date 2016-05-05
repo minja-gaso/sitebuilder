@@ -38,12 +38,13 @@ public class PreviewServlet extends HttpServlet {
 		long fkSiteId = template.getFkSiteId();
 		Website site = websiteDAO.getWebsite(fkSiteId);
 		
-		String html = template.getHtml();
-		String css = site.getCss();
-		html = html.replace("{CSS}", "<style type='text/css'>" + css + "</style>");
+		String templateHtml = template.getHtml();
+		String siteCss = site.getCss();
+		templateHtml = templateHtml.replace("{FOOTER}", site.getFooter());
+		templateHtml = templateHtml.replace("{CSS}", "<style type='text/css'>" + siteCss + "</style>");
 		
 		response.setContentType("text/html");
 		response.setCharacterEncoding("utf-8");
-		response.getWriter().println(html);
+		response.getWriter().println(templateHtml);
 	}
 }

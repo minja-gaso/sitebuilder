@@ -137,6 +137,7 @@ public class FrontController extends HttpServlet
 			{
 				page = PageParameters.process(request, page);
 				websiteDAO.updateWebsitePage(page);
+				websiteDAO.archiveWebsitePage(page);
 			}
 			else if(paramAction.equals("CREATE_PAGE"))
 			{
@@ -203,6 +204,10 @@ public class FrontController extends HttpServlet
 				{
 					website.getTemplate().addAll(templates);
 				}
+			}
+			else if(paramScreen.equals("FOOTER"))
+			{
+				xslScreen = "footer.xsl";
 			}
 			else if(paramScreen.equals("CSS"))
 			{
