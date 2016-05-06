@@ -32,16 +32,30 @@ public class PreviewServlet extends HttpServlet {
 			}
 		}
 		
+		String paramWebsiteId = request.getParameter("WEBSITE_ID");
+		long websiteID = 0;
+		if(paramWebsiteId != null)
+		{
+			try
+			{
+				websiteID = Long.parseLong(paramWebsiteId);
+			}
+			catch(NumberFormatException e)
+			{
+				websiteID = 0;
+			}
+		}
+		
 		WebsiteDAO websiteDAO = DAOFactory.getWebsiteDAO();
-		Template template = websiteDAO.getWebsiteTemplate(templateID);
+		Template template = websiteDAO.getWebsiteTemplate(templateID, websiteID);
 		
 		long fkSiteId = template.getFkSiteId();
 		Website site = websiteDAO.getWebsite(fkSiteId);
 		
 		String templateHtml = template.getHtml();
-		String siteCss = site.getCss();
+		String templateCss = site.getCss();
 		templateHtml = templateHtml.replace("{FOOTER}", site.getFooter());
-		templateHtml = templateHtml.replace("{CSS}", "<style type='text/css'>" + siteCss + "</style>");
+		templateHtml = templateHtml.replace("{CSS}", "<style type='text/css'>" + templateCss + "</style>");
 		
 		response.setContentType("text/html");
 		response.setCharacterEncoding("utf-8");

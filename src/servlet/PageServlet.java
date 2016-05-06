@@ -19,6 +19,10 @@ public class PageServlet extends HttpServlet {
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
 	{
+		
+		response.setContentType("text/html");
+		response.setCharacterEncoding("utf-8");
+		
 		String paramPageId = request.getPathInfo().substring(1);
 		long pageID = 0;
 		if(paramPageId != null)
@@ -33,25 +37,42 @@ public class PageServlet extends HttpServlet {
 			}
 		}
 		
+		String paramWebsiteId = request.getParameter("WEBSITE_ID");
+		long websiteID = 0;
+		if(paramWebsiteId != null)
+		{
+			try
+			{
+				websiteID = Long.parseLong(paramWebsiteId);
+			}
+			catch(NumberFormatException e)
+			{
+				websiteID = 0;
+			}
+		}
+		
 		WebsiteDAO websiteDAO = DAOFactory.getWebsiteDAO();
-		Page page = websiteDAO.getWebsitePage(pageID);
+		Page page = websiteDAO.getWebsitePage(pageID, websiteID);
 
 		long fkTemplateId = page.getFkTemplateId();
-		Template template = websiteDAO.getWebsiteTemplate(fkTemplateId);
-		
-		long fkSiteId = template.getFkSiteId();
-		Website site = websiteDAO.getWebsite(fkSiteId);
+		Template template = websiteDAO.getWebsiteTemplate(fkTemplateId, websiteID);
+		if(template != null)
+		{
+			long fkSiteId = template.getFkSiteId();
+			Website site = websiteDAO.getWebsite(fkSiteId);
 
-		String templateHtml = template.getHtml();
-		templateHtml = templateHtml.replace("{CONTENT}", page.getHtml());
-		templateHtml = templateHtml.replace("{TITLE}", page.getTitle());
-		templateHtml = templateHtml.replace("{SUBTITLE}", page.getSubtitle());
-		templateHtml = templateHtml.replace("{FOOTER}", site.getFooter());
-		templateHtml = templateHtml.replace("{CSS}", "<style type='text/css'>" + site.getCss() + "</style>");
-		
-		response.setContentType("text/html");
-		response.setCharacterEncoding("utf-8");
-		response.getWriter().println(templateHtml);
+			String templateHtml = template.getHtml();
+			templateHtml = templateHtml.replace("{CONTENT}", page.getHtml());
+			templateHtml = templateHtml.replace("{TITLE}", page.getTitle());
+			templateHtml = templateHtml.replace("{SUBTITLE}", page.getSubtitle());
+			templateHtml = templateHtml.replace("{FOOTER}", site.getFooter());
+			templateHtml = templateHtml.replace("{CSS}", "<style type='text/css'>" + site.getCss() + "</style>");
+			response.getWriter().println(templateHtml);
+		}
+		else
+		{
+			response.getWriter().println(page.getHtml());
+		}
 	}
 
 }

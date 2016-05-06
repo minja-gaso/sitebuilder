@@ -13,6 +13,7 @@ import org.sw.marketing.dao.sitebuilder.DAOFactory;
 import org.sw.marketing.dao.sitebuilder.WebsiteDAO;
 import org.sw.marketing.data.website.Data;
 import org.sw.marketing.data.website.Data.Website;
+import org.sw.marketing.data.website.Data.Website.ArchivePage;
 import org.sw.marketing.data.website.Data.Website.Page;
 import org.sw.marketing.data.website.Data.Website.Template;
 import org.sw.marketing.data.website.Environment;
@@ -88,13 +89,27 @@ public class FrontController extends HttpServlet
 			}
 		}
 		
+		String paramArchiveId = request.getParameter("ARCHIVE_ID");
+		long archiveID = 0;
+		if(paramArchiveId != null)
+		{
+			try
+			{
+				archiveID = Long.parseLong(paramArchiveId);
+			}
+			catch(NumberFormatException e)
+			{
+				archiveID = 0;
+			}
+		}
+		
 		Data data = new Data();
 		Website website = websiteDAO.getWebsite(websiteID);
 		java.util.List<Website> websites = null;
 		
-		Template template = websiteDAO.getWebsiteTemplate(templateID);
+		Template template = websiteDAO.getWebsiteTemplate(templateID, websiteID);
 		java.util.List<Template> templates = null;
-		Page page = websiteDAO.getWebsitePage(pageID);
+		Page page = websiteDAO.getWebsitePage(pageID, websiteID);
 		java.util.List<Page> pages = null;
 		
 		boolean isNewWebsite = false;
@@ -126,8 +141,8 @@ public class FrontController extends HttpServlet
 			}
 			else if(paramAction.equals("CREATE_TEMPLATE"))
 			{
-				templateID = websiteDAO.createWebsiteTemplate();
-				template = websiteDAO.getWebsiteTemplate(templateID);
+				templateID = websiteDAO.createWebsiteTemplate(websiteID);
+				template = websiteDAO.getWebsiteTemplate(templateID, websiteID);
 			}
 			else if(paramAction.equals("DELETE_TEMPLATE"))
 			{
@@ -141,12 +156,19 @@ public class FrontController extends HttpServlet
 			}
 			else if(paramAction.equals("CREATE_PAGE"))
 			{
-				pageID = websiteDAO.createWebsitePage();
-				page = websiteDAO.getWebsitePage(pageID);
+				pageID = websiteDAO.createWebsitePage(websiteID);
+				page = websiteDAO.getWebsitePage(pageID, websiteID);
 			}
 			else if(paramAction.equals("DELETE_PAGE"))
 			{
 				websiteDAO.deleteWebsitePage(pageID);
+			}
+			else if(paramAction.equals("APPLY_ARCHIVE"))
+			{
+				Page archivePage = websiteDAO.getWebsitePageArchive(archiveID);
+				archivePage = PageParameters.process(request, page);
+				archivePage.setId(pageID);
+				websiteDAO.applyArchivePage(archivePage);
 			}
 		}
 		
@@ -155,8 +177,8 @@ public class FrontController extends HttpServlet
 			websites = websiteDAO.getWebsites();
 		}
 		
-		templates = websiteDAO.getWebsiteTemplates();
-		pages = websiteDAO.getWebsitePages();		
+		templates = websiteDAO.getWebsiteTemplates(websiteID);
+		pages = websiteDAO.getWebsitePages(websiteID);		
 		
 		String xslScreen = null;
 		if((parameterMap.get("SCREEN") != null))
@@ -203,6 +225,30 @@ public class FrontController extends HttpServlet
 				if(templates != null)
 				{
 					website.getTemplate().addAll(templates);
+				}
+			}
+			else if(paramScreen.equals("PAGE_ARCHIVE"))
+			{
+				xslScreen = "page_archive.xsl";
+//				website.getPage().add(page);
+				Page archivePage = null;
+				if(archiveID == 0)
+				{
+					archivePage = websiteDAO.getWebsitePage(pageID, websiteID);
+				}
+				else
+				{
+					archivePage = websiteDAO.getWebsitePageArchive(archiveID);
+				}
+				if(archivePage != null)
+				{
+					website.getPage().add(archivePage);
+				}
+				
+				java.util.List<ArchivePage> archivePages = websiteDAO.getWebsitePageArchives(page.getId());
+				if(archivePages != null)
+				{
+					website.getArchivePage().addAll(archivePages);
 				}
 			}
 			else if(paramScreen.equals("FOOTER"))
