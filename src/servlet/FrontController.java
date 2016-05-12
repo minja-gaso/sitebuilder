@@ -15,11 +15,15 @@ import org.sw.marketing.data.website.Data;
 import org.sw.marketing.data.website.Data.Website;
 import org.sw.marketing.data.website.Data.Website.ArchivePage;
 import org.sw.marketing.data.website.Data.Website.Page;
+import org.sw.marketing.data.website.Data.Website.Page.Component;
+import org.sw.marketing.data.website.Data.Website.Page.Component.Item;
 import org.sw.marketing.data.website.Data.Website.Template;
 import org.sw.marketing.data.website.Environment;
 import org.sw.marketing.transformation.TransformerHelper;
 import org.sw.marketing.util.ReadFile;
 
+import servlet.params.ComponentItemParameters;
+import servlet.params.ComponentParameters;
 import servlet.params.PageParameters;
 import servlet.params.SiteParameters;
 import servlet.params.TemplateParameters;
@@ -31,6 +35,16 @@ public class FrontController extends HttpServlet
 	
 	protected void process(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
 	{
+		boolean isAdmin = false;
+		if(request.getParameter("isAdmin") != null)
+		{
+			String isAdminStr = request.getParameter("isAdmin");
+			if(isAdminStr.equals("true"))
+			{
+				isAdmin = true;
+			}
+		}
+		
 		HttpSession httpSession = request.getSession();
 		WebsiteDAO websiteDAO = DAOFactory.getWebsiteDAO();
 		
@@ -103,7 +117,36 @@ public class FrontController extends HttpServlet
 			}
 		}
 		
+		String paramComponentId = request.getParameter("COMPONENT_ID");
+		long componentID = 0;
+		if(paramComponentId != null)
+		{
+			try
+			{
+				componentID = Long.parseLong(paramComponentId);
+			}
+			catch(NumberFormatException e)
+			{
+				componentID = 0;
+			}
+		}
+		
+		String paramComponentItemId = request.getParameter("COMPONENT_ITEM_ID");
+		long componentItemID = 0;
+		if(paramComponentItemId != null)
+		{
+			try
+			{
+				componentItemID = Long.parseLong(paramComponentItemId);
+			}
+			catch(NumberFormatException e)
+			{
+				componentItemID = 0;
+			}
+		}
+		
 		Data data = new Data();
+		data.setAdmin(isAdmin);
 		Website website = websiteDAO.getWebsite(websiteID);
 		java.util.List<Website> websites = null;
 		
@@ -111,6 +154,10 @@ public class FrontController extends HttpServlet
 		java.util.List<Template> templates = null;
 		Page page = websiteDAO.getWebsitePage(pageID, websiteID);
 		java.util.List<Page> pages = null;
+		Component component = websiteDAO.getComponent(componentID);
+		java.util.List<Component> components = websiteDAO.getComponents(pageID);
+		Item item = websiteDAO.getComponentItem(componentItemID);
+		java.util.List<Item> items = websiteDAO.getComponentItems(componentID);
 		
 		boolean isNewWebsite = false;
 		
@@ -170,6 +217,86 @@ public class FrontController extends HttpServlet
 				archivePage.setId(pageID);
 				websiteDAO.applyArchivePage(archivePage);
 			}
+			else if(paramAction.equals("CREATE_COMPONENT"))
+			{
+				if((parameterMap.get("COMPONENT_TYPE") != null))
+				{
+					String paramComponentType = parameterMap.get("COMPONENT_TYPE")[0];
+					componentID = websiteDAO.createComponent(paramComponentType, pageID);
+					component = websiteDAO.getComponent(componentID);
+					if(components != null)
+					{
+						int orderNumber = components.size() + 1;
+						component.setOrderNumber(orderNumber);
+						websiteDAO.updateComponent(component);
+					}
+					components = websiteDAO.getComponents(pageID);
+				}
+			}
+			else if(paramAction.equals("CREATE_COMPONENT_ITEM"))
+			{					
+				long itemID = websiteDAO.createComponentItem(componentID);
+				item = websiteDAO.getComponentItem(itemID);
+				if(items != null)
+				{
+					int orderNumber = items.size() + 1;
+					item.setOrderNumber(orderNumber);
+					websiteDAO.updateComponentItem(item);
+				}				
+				items = websiteDAO.getComponentItems(componentID);
+			}
+			else if(paramAction.equals("SAVE_COMPONENT"))
+			{
+				component = ComponentParameters.process(request, component);
+				websiteDAO.updateComponent(component);
+			}
+			else if(paramAction.equals("DELETE_COMPONENT"))
+			{
+				websiteDAO.deleteComponent(componentID);
+				components = websiteDAO.getComponents(pageID);
+			}	
+			else if(paramAction.equals("MOVE_COMPONENT"))
+			{
+				String paramComponentOrderNumber = request.getParameter("COMPONENT_ORDER_NUMBER");
+				int orderNumber = Integer.parseInt(paramComponentOrderNumber);
+				
+				Component first = websiteDAO.getComponent(componentID);
+				Component second = websiteDAO.getComponentByOrderNumber(orderNumber);
+				int originalOrderNumber = first.getOrderNumber();
+				
+				first.setOrderNumber(orderNumber);				
+				second.setOrderNumber(originalOrderNumber);
+				websiteDAO.updateComponent(first);
+				websiteDAO.updateComponent(second);
+				
+				components = websiteDAO.getComponents(pageID);
+			}	
+			else if(paramAction.equals("SAVE_COMPONENT_ITEM"))
+			{
+				item = ComponentItemParameters.process(request, item);
+				websiteDAO.updateComponentItem(item);
+			}
+			else if(paramAction.equals("DELETE_COMPONENT_ITEM"))
+			{
+				websiteDAO.deleteComponentItem(componentItemID);
+				items = websiteDAO.getComponentItems(componentID);
+			}	
+			else if(paramAction.equals("MOVE_COMPONENT_ITEM"))
+			{
+				String paramComponentItemOrderNumber = request.getParameter("COMPONENT_ITEM_ORDER_NUMBER");
+				int orderNumber = Integer.parseInt(paramComponentItemOrderNumber);
+				
+				Item first = websiteDAO.getComponentItem(componentItemID);
+				Item second = websiteDAO.getComponentItemByOrderNumber(orderNumber);
+				int originalOrderNumber = first.getOrderNumber();
+				
+				first.setOrderNumber(orderNumber);				
+				second.setOrderNumber(originalOrderNumber);
+				websiteDAO.updateComponentItem(first);
+				websiteDAO.updateComponentItem(second);
+				
+				items = websiteDAO.getComponentItems(componentID);
+			}			
 		}
 		
 		if(websiteID == 0)
@@ -226,6 +353,11 @@ public class FrontController extends HttpServlet
 				{
 					website.getTemplate().addAll(templates);
 				}
+				
+				if(components != null)
+				{
+					page.getComponent().addAll(components);
+				}
 			}
 			else if(paramScreen.equals("PAGE_ARCHIVE"))
 			{
@@ -258,6 +390,37 @@ public class FrontController extends HttpServlet
 			else if(paramScreen.equals("CSS"))
 			{
 				xslScreen = "css.xsl";
+			}
+			else if(paramScreen.equals("COMPONENT"))
+			{
+				xslScreen = "component.xsl";
+				
+//				String paramComponentId = parameterMap.get("COMPONENT_ID")[0];
+//				long componentID = Long.parseLong(paramComponentId);
+				
+				if(component != null)
+				{
+					if(items != null)
+					{
+						component.getItem().addAll(items);
+					}
+					page.getComponent().add(component);				
+				}
+				website.getPage().add(page);
+			}
+			else if(paramScreen.equals("COMPONENT_ITEM"))
+			{
+				xslScreen = "component_item.xsl";
+				
+				if(component != null)
+				{
+					if(item != null)
+					{
+						component.getItem().add(item);
+					}
+					page.getComponent().add(component);
+				}
+				website.getPage().add(page);
 			}
 			else
 			{

@@ -1,5 +1,6 @@
 package servlet;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -9,9 +10,14 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.sw.marketing.dao.sitebuilder.DAOFactory;
 import org.sw.marketing.dao.sitebuilder.WebsiteDAO;
+import org.sw.marketing.data.website.Data;
 import org.sw.marketing.data.website.Data.Website;
 import org.sw.marketing.data.website.Data.Website.Page;
 import org.sw.marketing.data.website.Data.Website.Template;
+import org.sw.marketing.transformation.TransformerHelper;
+import org.sw.marketing.data.website.Data.Website.Page.Component;
+import org.sw.marketing.data.website.Data.Website.Page.Component.Item;
+import org.sw.marketing.util.ReadFile;
 
 @WebServlet("/page/*")
 public class PageServlet extends HttpServlet {
@@ -51,9 +57,31 @@ public class PageServlet extends HttpServlet {
 			}
 		}
 		
-		WebsiteDAO websiteDAO = DAOFactory.getWebsiteDAO();
+		WebsiteDAO websiteDAO = DAOFactory.getWebsiteDAO();		
+		Data data = new Data();
+		Website website = websiteDAO.getWebsite(websiteID);
 		Page page = websiteDAO.getWebsitePage(pageID, websiteID);
 
+		java.util.List<Component> components = websiteDAO.getComponents(pageID);
+		if(components != null)
+		{
+			for(Component component : components)
+			{
+				java.util.List<Item> items = websiteDAO.getComponentItems(component.getId());
+				if(items != null)
+				{
+					component.getItem().addAll(items);
+				}
+				page.getComponent().add(component);
+			}
+		}
+		
+		if(page != null)
+		{
+			website.getPage().add(page);
+			data.getWebsite().add(website);
+		}
+		
 		long fkTemplateId = page.getFkTemplateId();
 		Template template = websiteDAO.getWebsiteTemplate(fkTemplateId, websiteID);
 		if(template != null)
@@ -62,7 +90,23 @@ public class PageServlet extends HttpServlet {
 			Website site = websiteDAO.getWebsite(fkSiteId);
 
 			String templateHtml = template.getHtml();
-			templateHtml = templateHtml.replace("{CONTENT}", page.getHtml());
+			
+			String contentStr = null;
+			if(page.getHtml().length() > 0)
+			{
+				contentStr = page.getHtml();
+			}
+			else
+			{
+				TransformerHelper transformerHelper = new TransformerHelper();
+				String xmlStr = transformerHelper.getXmlStr("org.sw.marketing.data.website", data);
+				String xslScreen = getServletContext().getInitParameter("xslPath") + "public\\element.xsl";
+				String xslStr = ReadFile.getSkin(xslScreen);
+				contentStr = transformerHelper.getHtmlStr(xmlStr, new ByteArrayInputStream(xslStr.getBytes()));
+				
+				System.out.println(xmlStr);
+			}
+			templateHtml = templateHtml.replace("{CONTENT}", contentStr);
 			templateHtml = templateHtml.replace("{TITLE}", page.getTitle());
 			templateHtml = templateHtml.replace("{SUBTITLE}", page.getSubtitle());
 			templateHtml = templateHtml.replace("{FOOTER}", site.getFooter());
