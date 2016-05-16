@@ -1,0 +1,32 @@
+.form-control { border-radius: 0; }
+
+body { font-family: 'Source Sans Pro', sans-serif; }
+
+header {}
+header a { background-image: url(http://localhost:8080/sitebuilder/img/logo2.jpg); background-position: center center; background-repeat: no-repeat; display: block; min-height: 120px; }
+
+/*
+ * Content Section
+ */
+main { font-size: 12px; }
+main > #video { position: relative; }
+main > #video section.title { position: absolute; text-align: center; top: 60px; width: 100%; }
+main > #video section.title h1 { color: #ffffff; }
+
+main > section.highlight { background-color: #0190BA; color: #ffffff; }
+main > section.highlight div.attract .info { font-size: 16px; padding-top: 30px; padding-right: 50px; padding-bottom: 30px; }
+main > section.highlight div.attract .subscribe { font-size: 16px; background-color: #074C91; padding: 60px; padding-top: 30px; }
+main > section.highlight div.attract h3 { font-weight: bold; margin: 0; margin-bottom: 12px; }
+main > section.highlight div.attract input { margin-bottom: 8px; }
+
+footer { padding: 40px 0;  }
+footer h3 {color: #074C91; font-weight: 700; margin-top: 0; }
+footer a { color: #074C91; font-weight: bold; }
+
+@media only screen and (max-width : 768px)
+{
+  footer .list-inline { margin-bottom: 36px; }
+  footer .list-inline > li { display: block; margin-bottom: 12px; }
+  main > section.highlight div.attract .info,
+  main > section.highlight div.attract .subscribe { padding: 15px; }
+}
