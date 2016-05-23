@@ -42,81 +42,87 @@ public class PageServlet extends HttpServlet {
 				pageID = 0;
 			}
 		}
-		
-		String paramWebsiteId = request.getParameter("WEBSITE_ID");
-		long websiteID = 0;
-		if(paramWebsiteId != null)
-		{
-			try
-			{
-				websiteID = Long.parseLong(paramWebsiteId);
-			}
-			catch(NumberFormatException e)
-			{
-				websiteID = 0;
-			}
-		}
-		
+
 		WebsiteDAO websiteDAO = DAOFactory.getWebsiteDAO();		
 		Data data = new Data();
-		Website website = websiteDAO.getWebsite(websiteID);
-		Page page = websiteDAO.getWebsitePage(pageID, websiteID);
-
-		java.util.List<Component> components = websiteDAO.getComponents(pageID);
-		if(components != null)
-		{
-			for(Component component : components)
-			{
-				java.util.List<Item> items = websiteDAO.getComponentItems(component.getId());
-				if(items != null)
-				{
-					component.getItem().addAll(items);
-				}
-				page.getComponent().add(component);
-			}
-		}
-		
+		Page page = websiteDAO.getWebsitePage(pageID);
 		if(page != null)
 		{
-			website.getPage().add(page);
-			data.getWebsite().add(website);
-		}
-		
-		long fkTemplateId = page.getFkTemplateId();
-		Template template = websiteDAO.getWebsiteTemplate(fkTemplateId, websiteID);
-		if(template != null)
-		{
-			long fkSiteId = template.getFkSiteId();
-			Website site = websiteDAO.getWebsite(fkSiteId);
+			long fkSiteId = page.getFkSiteId();
+			Website website = websiteDAO.getWebsite(fkSiteId);
 
-			String templateHtml = template.getHtml();
-			
-			String contentStr = null;
-			if(page.getHtml().length() > 0)
+			java.util.List<Component> components = websiteDAO.getComponents(pageID);
+			if(components != null)
 			{
-				contentStr = page.getHtml();
+				for(Component component : components)
+				{
+					if(component != null)
+					{
+						java.util.List<Item> items = websiteDAO.getComponentItems(component.getId());
+						if(items != null)
+						{
+							component.getItem().addAll(items);
+						}
+						page.getComponent().add(component);
+					}
+				}
+			}
+			
+			if(page != null)
+			{
+				website.getPage().add(page);
+				data.getWebsite().add(website);
+			}
+			
+			long fkTemplateId = page.getFkTemplateId();
+			Template template = websiteDAO.getWebsiteTemplate(fkTemplateId, fkSiteId);
+			if(template != null)
+			{
+				String templateHtml = template.getHtml();
+				
+				String contentStr = null;
+				if(page.getHtml().length() > 0)
+				{
+					contentStr = page.getHtml();
+				}
+				else
+				{
+					TransformerHelper transformerHelper = new TransformerHelper();
+					String xmlStr = transformerHelper.getXmlStr("org.sw.marketing.data.website", data);
+					String xslScreen = getServletContext().getInitParameter("xslPath") + "public\\element.xsl";
+					String xslStr = ReadFile.getSkin(xslScreen);
+					contentStr = transformerHelper.getHtmlStr(xmlStr, new ByteArrayInputStream(xslStr.getBytes()));
+					
+					System.out.println(xmlStr);
+				}
+				templateHtml = templateHtml.replace("{CONTENT}", contentStr);
+				templateHtml = templateHtml.replace("{TITLE}", page.getTitle());
+				templateHtml = templateHtml.replace("{SUBTITLE}", page.getSubtitle());
+				templateHtml = templateHtml.replace("{FOOTER}", website.getFooter());
+				templateHtml = templateHtml.replace("{CSS}", "<style type='text/css'>" + website.getCss() + "</style>");
+				response.getWriter().println(templateHtml);
 			}
 			else
 			{
-				TransformerHelper transformerHelper = new TransformerHelper();
-				String xmlStr = transformerHelper.getXmlStr("org.sw.marketing.data.website", data);
-				String xslScreen = getServletContext().getInitParameter("xslPath") + "public\\element.xsl";
-				String xslStr = ReadFile.getSkin(xslScreen);
-				contentStr = transformerHelper.getHtmlStr(xmlStr, new ByteArrayInputStream(xslStr.getBytes()));
-				
-				System.out.println(xmlStr);
+				response.getWriter().println(page.getHtml());
 			}
-			templateHtml = templateHtml.replace("{CONTENT}", contentStr);
-			templateHtml = templateHtml.replace("{TITLE}", page.getTitle());
-			templateHtml = templateHtml.replace("{SUBTITLE}", page.getSubtitle());
-			templateHtml = templateHtml.replace("{FOOTER}", site.getFooter());
-			templateHtml = templateHtml.replace("{CSS}", "<style type='text/css'>" + site.getCss() + "</style>");
-			response.getWriter().println(templateHtml);
 		}
-		else
-		{
-			response.getWriter().println(page.getHtml());
-		}
+		
+//		String paramWebsiteId = request.getParameter("WEBSITE_ID");
+//		long websiteID = 0;
+//		if(paramWebsiteId != null)
+//		{
+//			try
+//			{
+//				websiteID = Long.parseLong(paramWebsiteId);
+//			}
+//			catch(NumberFormatException e)
+//			{
+//				websiteID = 0;
+//			}
+//		}
+		
+		
 	}
 
 }

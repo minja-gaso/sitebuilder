@@ -438,7 +438,10 @@ public class FrontController extends HttpServlet
 		}
 		else 
 		{
-			data.getWebsite().addAll(websites);
+			if(websites != null)
+			{
+				data.getWebsite().addAll(websites);
+			}
 		}
 		
 		Environment environment = new Environment();
